@@ -1,6 +1,7 @@
 package sothcheat.dashboard;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.toedter.calendar.JCalendar;
 import net.miginfocom.swing.MigLayout;
 import sothcheat.components.Sidebar;
 import sothcheat.manager.SessionManager;
@@ -18,7 +19,9 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -82,6 +85,7 @@ public class ViewAllIncome extends JPanel {
                     transaction.getCategoryName(),
                     transaction.getDescription(),
                     currencyFormat.format(transaction.getAmount()),
+                    null,
                     transaction.getTransactionId()
             });
         }
@@ -162,7 +166,7 @@ public class ViewAllIncome extends JPanel {
         searchPanel.add(searchField, "growx");
 
         // Filters
-        JPanel filtersPanel = new JPanel(new MigLayout("insets 0 0 0 2", "[]8[]8[]8[]8[]10[]", "[]"));
+        JPanel filtersPanel = new JPanel(new MigLayout("insets 0 0 0 2", "[]8[]8[]8[]8[]8[]10[]", "[]"));
         filtersPanel.setBackground(Color.WHITE);
 
         JLabel categoryLabel = new JLabel("Category:");
@@ -172,6 +176,15 @@ public class ViewAllIncome extends JPanel {
         JLabel dateLabel = new JLabel("Date:");
         dateLabel.putClientProperty(FlatClientProperties.STYLE, "foreground:#3D3828");
         dateField = new JTextField(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        JButton datePickerBtn = new JButton(new ImageIcon(getClass().getResource("/assets/icons/calendar.png")));
+        datePickerBtn.setToolTipText("Pick a date");
+        datePickerBtn.putClientProperty(FlatClientProperties.STYLE, "" +
+                "background:#FEE394;" +
+                "foreground:#3D3828;" +
+                "borderWidth:0;" +
+                "focusWidth:0;" +
+                "arc:12");
+        datePickerBtn.addActionListener(e -> showJCalendarPicker(dateField));
 
         JLabel sortLabel = new JLabel("Sort by:");
         sortLabel.putClientProperty(FlatClientProperties.STYLE, "foreground:#3D3828");
@@ -198,10 +211,11 @@ public class ViewAllIncome extends JPanel {
 
         filtersPanel.add(categoryLabel);
         filtersPanel.add(categoryCombo, "growx, wmin 180");
-        filtersPanel.add(dateLabel);
-        filtersPanel.add(dateField, "growx, wmin 140");
         filtersPanel.add(sortLabel);
-        filtersPanel.add(sortCombo, "growx, wmin 140");
+        filtersPanel.add(sortCombo, "growx, wmin 130");
+        filtersPanel.add(dateLabel);
+        filtersPanel.add(dateField, "split 2, growx, wmin 120");
+        filtersPanel.add(datePickerBtn, "w 30!");
         filtersPanel.add(new JLabel(""), "growx, pushx");
         filtersPanel.add(applyBtn, "gapright 10");
         filtersPanel.add(resetBtn);
@@ -243,6 +257,12 @@ public class ViewAllIncome extends JPanel {
         incomeTable.getColumnModel().getColumn(5).setMinWidth(0);
         incomeTable.getColumnModel().getColumn(5).setMaxWidth(0);
         incomeTable.getColumnModel().getColumn(5).setWidth(0);
+
+        incomeTable.getColumnModel().getColumn(0).setPreferredWidth(100);
+        incomeTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        incomeTable.getColumnModel().getColumn(2).setPreferredWidth(300);
+        incomeTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+        incomeTable.getColumnModel().getColumn(4).setPreferredWidth(100);
 
         JScrollPane scrollPane = new JScrollPane(incomeTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(0xE0E0E0), 1));
@@ -336,17 +356,22 @@ public class ViewAllIncome extends JPanel {
 
         JLabel dateLabel = new JLabel("Date:");
         JTextField dateField = new JTextField(transaction.getDate().toString());
-
+        JButton datePickerBtn = new JButton(new ImageIcon(getClass().getResource("/assets/icons/calendar.png")));
+        datePickerBtn.setToolTipText("Pick a date");
+        datePickerBtn.putClientProperty(FlatClientProperties.STYLE, "" +
+                "background:#FEE394;" +
+                "foreground:#3D3828;" +
+                "borderWidth:0;" +
+                "focusWidth:0;" +
+                "arc:12");
+        datePickerBtn.addActionListener(e -> showJCalendarPicker(dateField));
         JLabel amountLabel = new JLabel("Amount:");
         JTextField amountField = new JTextField(transaction.getAmount().toString());
-
         JLabel descLabel = new JLabel("Description:");
         JTextField descField = new JTextField(transaction.getDescription());
-
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton saveBtn = new JButton("Save Changes");
         saveBtn.putClientProperty(FlatClientProperties.STYLE, "background:#FEE394;foreground:#3D3828;borderWidth:0;focusWidth:0");
-
         JButton cancelBtn = new JButton("Cancel");
         cancelBtn.putClientProperty(FlatClientProperties.STYLE, "background:#FFFFFF;foreground:#3D3828;borderWidth:1;borderColor:#3D3828;focusWidth:0");
 
@@ -399,7 +424,8 @@ public class ViewAllIncome extends JPanel {
         dialog.add(categoryLabel, "wrap");
         dialog.add(categoryCombo, "growx, wrap");
         dialog.add(dateLabel, "wrap");
-        dialog.add(dateField, "growx, wrap");
+        dialog.add(dateField, "split 2, growx");
+        dialog.add(datePickerBtn, "w 35!, wrap");
         dialog.add(amountLabel, "wrap");
         dialog.add(amountField, "growx, wrap");
         dialog.add(descLabel, "wrap");
@@ -409,6 +435,74 @@ public class ViewAllIncome extends JPanel {
         dialog.setSize(450, 450);
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
+    }
+
+    private void showJCalendarPicker(JTextField targetDateField) {
+        JDialog calendarDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Select Date", true);
+        calendarDialog.setLayout(new BorderLayout());
+
+        // Create JCalendar
+        JCalendar calendar = new JCalendar();
+
+        try {
+            LocalDate currentDate = LocalDate.parse(targetDateField.getText().trim());
+            Date date = Date.from(currentDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            calendar.setDate(date);
+        } catch (Exception ignored) {
+            calendar.setDate(new Date());
+        }
+
+        calendar.setBackground(Color.WHITE);
+        calendar.setWeekOfYearVisible(false);
+
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        buttonsPanel.setBackground(Color.WHITE);
+
+        JButton todayBtn = new JButton("Today");
+        todayBtn.putClientProperty(FlatClientProperties.STYLE, "" +
+                "background:#FEE394;" +
+                "foreground:#3D3828;" +
+                "borderWidth:0;" +
+                "focusWidth:0");
+        todayBtn.addActionListener(e -> {
+            calendar.setDate(new Date());
+        });
+
+        JButton selectBtn = new JButton("Select");
+        selectBtn.putClientProperty(FlatClientProperties.STYLE, "" +
+                "background:#FEE394;" +
+                "foreground:#3D3828;" +
+                "borderWidth:0;" +
+                "focusWidth:0");
+        selectBtn.addActionListener(e -> {
+            Date selectedDate = calendar.getDate();
+            LocalDate localDate = selectedDate.toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            targetDateField.setText(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+            calendarDialog.dispose();
+        });
+
+        JButton cancelBtn = new JButton("Cancel");
+        cancelBtn.putClientProperty(FlatClientProperties.STYLE, "" +
+                "background:#FFFFFF;" +
+                "foreground:#3D3828;" +
+                "borderWidth:2;" +
+                "borderColor:#FEE394;" +
+                "focusWidth:0");
+        cancelBtn.addActionListener(e -> calendarDialog.dispose());
+
+        buttonsPanel.add(todayBtn);
+        buttonsPanel.add(selectBtn);
+        buttonsPanel.add(cancelBtn);
+
+        // Add components to dialog
+        calendarDialog.add(calendar, BorderLayout.CENTER);
+        calendarDialog.add(buttonsPanel, BorderLayout.SOUTH);
+
+        calendarDialog.setSize(400, 350);
+        calendarDialog.setLocationRelativeTo(this);
+        calendarDialog.setVisible(true);
     }
 
     class ActionCellRenderer extends JPanel implements javax.swing.table.TableCellRenderer {

@@ -285,6 +285,11 @@ public class Dashboard extends JPanel {
         rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         expenseTable.getColumnModel().getColumn(3).setCellRenderer(rightRenderer);
 
+        expenseTable.getColumnModel().getColumn(0).setPreferredWidth(100);
+        expenseTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        expenseTable.getColumnModel().getColumn(2).setPreferredWidth(300);
+        expenseTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+
         JScrollPane scrollPane = new JScrollPane(expenseTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(0xE0E0E0), 1));
 

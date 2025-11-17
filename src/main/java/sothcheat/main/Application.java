@@ -6,11 +6,8 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import sothcheat.database.DBConnection;
 import sothcheat.login.LoginContainer;
 import sothcheat.manager.FormsManager;
-
 import javax.swing.*;
 import java.awt.*;
-
-
 
 public class Application extends JFrame {
 
